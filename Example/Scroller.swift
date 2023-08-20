@@ -8,12 +8,17 @@
 import UIKit
 
 class Scroller: UIViewController {
+  
+  let scrollView = UIScrollView()
+  
   override func viewDidLoad() {
     super.viewDidLoad()
     
     view.backgroundColor = .systemBlue
-    let scrollView = UIScrollView(frame: view.bounds)
+
+    scrollView.frame = view.bounds
     scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    scrollView.isScrollEnabled = false
     view.addSubview(scrollView)
     
     let stackView = UIStackView()
@@ -36,5 +41,10 @@ class Scroller: UIViewController {
       
       label.heightAnchor.constraint(equalToConstant: 30).isActive = true
     }
+    
+  }
+  
+  func changeToLargeDetent() {
+    print("Hello")
   }
 }

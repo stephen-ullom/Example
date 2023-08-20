@@ -7,7 +7,10 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, UISheetPresentationControllerDelegate {
+  
+  let scrollerView = Scroller()
+  let pagerView = Pager(transitionStyle: .scroll, navigationOrientation: .horizontal)
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -38,23 +41,36 @@ class ViewController: UIViewController {
     ])
   }
   
+  // MARK: Scroller
+  
   @objc func openScroller() {
-    let viewControllerToPresent = Scroller()
-    if let sheet = viewControllerToPresent.sheetPresentationController {
+    if let sheet = scrollerView.sheetPresentationController {
+//      sheet.delegate = self
       sheet.detents = [.medium(), .large()]
       sheet.prefersGrabberVisible = true
     }
-    present(viewControllerToPresent, animated: true, completion: nil)
+    present(scrollerView, animated: true, completion: nil)
   }
   
+  func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
+    if sheetPresentationController.selectedDetentIdentifier == .large {
+      print("Large")
+      pagerView.secondPage.scrollView.isScrollEnabled = true
+    } else {
+      pagerView.secondPage.scrollView.isScrollEnabled = false
+    }
+  }
+  
+  // MARK: Pager
+  
   @objc func openPager() {
-    let viewControllerToPresent = Pager(transitionStyle: .scroll, navigationOrientation: .horizontal)
-    if let sheet = viewControllerToPresent.sheetPresentationController {
+    if let sheet = pagerView.sheetPresentationController {
       sheet.detents = [.medium(), .large()]
+      sheet.delegate = self
       sheet.prefersGrabberVisible = true
     }
-    present(viewControllerToPresent, animated: true, completion: nil)
+    present(pagerView, animated: true, completion: nil)
   }
- 
+  
 }
 

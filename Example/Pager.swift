@@ -20,11 +20,15 @@ class FirstPageController: UIViewController {
 }
 
 class SecondPageController: UIViewController {
+  
+  let scrollView = UIScrollView()
+  
   override func viewDidLoad() {
     super.viewDidLoad()
     
     view.backgroundColor = .systemRed
-    let scrollView = UIScrollView(frame: view.bounds)
+    scrollView.frame = view.bounds
+    scrollView.isScrollEnabled = false
     scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     view.addSubview(scrollView)
     
@@ -52,16 +56,17 @@ class SecondPageController: UIViewController {
 }
 
 class Pager: UIPageViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+
   var pages: [UIViewController] = []
+  
+  let firstPage = FirstPageController()
+  let secondPage = SecondPageController()
   
   override func viewDidLoad() {
     super.viewDidLoad()
     
     dataSource = self
     delegate = self
-    
-    let firstPage = FirstPageController()
-    let secondPage = SecondPageController()
     
     pages = [firstPage, secondPage]
     
