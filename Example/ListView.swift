@@ -8,6 +8,8 @@
 import UIKit
 
 class ListView: UIViewController {
+  let scrollView = UIScrollView()
+  
   override func viewDidLoad() {
     super.viewDidLoad()
     
@@ -15,7 +17,6 @@ class ListView: UIViewController {
     view.backgroundColor = .systemRed
     
     // ScrollView
-    let scrollView = UIScrollView()
     view.addSubview(scrollView)
     scrollView.translatesAutoresizingMaskIntoConstraints = false
     
