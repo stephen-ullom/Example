@@ -12,16 +12,17 @@ class SheetViewController: UIViewController {
 
   var sheetTopConstraint: NSLayoutConstraint!
 
-  var defaultHeight = 600.0
+  private var defaultHeight = 600.0
 
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    let label = UILabel()
+    let listView = ListView()
+    listView.view?.translatesAutoresizingMaskIntoConstraints = false
 
     view.addSubview(sheetView)
 
-    sheetView.addSubview(label)
+    sheetView.addSubview(listView.view)
     sheetView.layer.cornerRadius = 24
     sheetView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
     sheetView.backgroundColor = .blue
@@ -34,9 +35,6 @@ class SheetViewController: UIViewController {
     let tapGesture = UITapGestureRecognizer(target: self, action: #selector(viewTapped(_:)))
     view.addGestureRecognizer(tapGesture)
 
-    label.text = "Hello"
-    label.translatesAutoresizingMaskIntoConstraints = false
-
     sheetTopConstraint = sheetView.topAnchor.constraint(equalTo: view.bottomAnchor, constant: -defaultHeight)
 
     NSLayoutConstraint.activate([
@@ -45,20 +43,27 @@ class SheetViewController: UIViewController {
       sheetView.rightAnchor.constraint(equalTo: view.rightAnchor),
       sheetView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-      label.centerYAnchor.constraint(equalTo: sheetView.centerYAnchor),
-      label.centerXAnchor.constraint(equalTo: sheetView.centerXAnchor),
+      listView.view.topAnchor.constraint(equalTo: sheetView.topAnchor, constant: 48),
+      listView.view.leftAnchor.constraint(equalTo: sheetView.leftAnchor),
+      listView.view.rightAnchor.constraint(equalTo: sheetView.rightAnchor),
+      listView.view.bottomAnchor.constraint(equalTo: sheetView.bottomAnchor),
     ])
   }
 
   @objc func sheetPanned(_ gestureRecognizer: UIPanGestureRecognizer) {
+    let translation = gestureRecognizer.translation(in: view)
+    let height = defaultHeight - translation.y
+
     if gestureRecognizer.state == .changed {
-      let translation = gestureRecognizer.translation(in: view)
-      sheetTopConstraint.constant = -defaultHeight + translation.y
+      setSheetHeight(height: height)
     } else if gestureRecognizer.state == .ended {
-      UIViewPropertyAnimator(duration: 0.6, dampingRatio: 0.8) {
-        self.sheetTopConstraint.constant = -self.defaultHeight
-        self.view.layoutIfNeeded()
-      }.startAnimation()
+      if height > 200 {
+        UIViewPropertyAnimator(duration: 0.6, dampingRatio: 0.8) {
+          self.setSheetHeight(height: self.defaultHeight)
+        }.startAnimation()
+      } else {
+        dismissSheet()
+      }
     }
   }
 
@@ -70,18 +75,32 @@ class SheetViewController: UIViewController {
     }
   }
 
-  func presentSheet() {
+  private func setSheetHeight(height: CGFloat) {
+    let maxHeight = view.frame.height - view.safeAreaInsets.top
+    if height > maxHeight {
+      sheetTopConstraint.constant = -maxHeight
+    } else if height > 0 {
+      sheetTopConstraint.constant = -height
+    } else {
+      sheetTopConstraint.constant = 0
+    }
+    view.layoutIfNeeded()
+  }
+
+  public func presentSheet() {
     view.isHidden = false
     UIViewPropertyAnimator(duration: 0.6, dampingRatio: 0.8) {
-      self.sheetTopConstraint.constant = -self.defaultHeight
-      self.view.layoutIfNeeded()
+//      self.sheetTopConstraint.constant = -self.defaultHeight
+      self.setSheetHeight(height: self.defaultHeight)
+//      self.view.layoutIfNeeded()
     }.startAnimation()
   }
 
-  func dismissSheet() {
+  public func dismissSheet() {
     let animator = UIViewPropertyAnimator(duration: 0.6, dampingRatio: 0.8) {
-      self.sheetTopConstraint.constant = 0
-      self.view.layoutIfNeeded()
+//      self.sheetTopConstraint.constant = 0
+//      self.view.layoutIfNeeded()
+      self.setSheetHeight(height: 0)
     }
 
     animator.addCompletion { _ in

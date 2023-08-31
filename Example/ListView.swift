@@ -11,29 +11,38 @@ class ListView: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     
-    let stackView = UIStackView()
-    
+    // View
     view.backgroundColor = .systemRed
-    view.addSubview(stackView)
     
+    // ScrollView
+    let scrollView = UIScrollView()
+    view.addSubview(scrollView)
+    scrollView.translatesAutoresizingMaskIntoConstraints = false
+    
+    // StackView
+    let stackView = UIStackView()
     stackView.axis = .vertical
-    stackView.spacing = 10
+    stackView.spacing = 24
     stackView.translatesAutoresizingMaskIntoConstraints = false
+    scrollView.addSubview(stackView)
+    
     NSLayoutConstraint.activate([
-      stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-      stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-      stackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
-      stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
+      scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+      scrollView.leftAnchor.constraint(equalTo: view.leftAnchor),
+      scrollView.rightAnchor.constraint(equalTo: view.rightAnchor),
+      scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+      
+      stackView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 20),
+      stackView.leftAnchor.constraint(equalTo: scrollView.leftAnchor, constant: 20),
+      stackView.rightAnchor.constraint(equalTo: scrollView.rightAnchor, constant: -20),
+      stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -20),
     ])
     
-    for i in 0 ..< 20 {
+    for i in 0 ..< 24 {
       let label = UILabel()
       label.text = "Label \(i + 1)"
       label.textColor = .white
-      label.textAlignment = .center
       stackView.addArrangedSubview(label)
-      
-      label.heightAnchor.constraint(equalToConstant: 30).isActive = true
     }
   }
 }
