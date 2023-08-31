@@ -7,8 +7,7 @@
 
 import UIKit
 
-class ViewController: UIViewController, UISheetPresentationControllerDelegate {
-  
+class ViewController: UIViewController, UIAdaptivePresentationControllerDelegate, ScrollingPageDelegate {
   let scrollerView = Scroller()
   let pagerView = Pager(transitionStyle: .scroll, navigationOrientation: .horizontal)
   
@@ -45,8 +44,10 @@ class ViewController: UIViewController, UISheetPresentationControllerDelegate {
   
   @objc func openScroller() {
     if let sheet = scrollerView.sheetPresentationController {
-//      sheet.delegate = self
       sheet.detents = [.medium(), .large()]
+//      sheet.detents = [.custom(resolver: { context in
+//        return 600
+//      })]
       sheet.prefersGrabberVisible = true
     }
     present(scrollerView, animated: true, completion: nil)
@@ -55,9 +56,32 @@ class ViewController: UIViewController, UISheetPresentationControllerDelegate {
   func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
     if sheetPresentationController.selectedDetentIdentifier == .large {
       print("Large")
-      pagerView.secondPage.scrollView.isScrollEnabled = true
+      pagerView.scrollingPage.scrollView.isScrollEnabled = true
     } else {
-      pagerView.secondPage.scrollView.isScrollEnabled = false
+      pagerView.scrollingPage.scrollView.isScrollEnabled = false
+    }
+  }
+  
+  func scrollingPageDidScroll(gestureRecognizer: UIPanGestureRecognizer) {
+//    print("offset", offset)
+    
+//    if let sheet = pagerView.presentationController {
+////      sheet.offsetFromBottom = offset
+//
+//    }
+    
+    
+    guard let presentedView = gestureRecognizer.view else { return }
+    
+    let translation = gestureRecognizer.translation(in: presentedView.superview)
+    gestureRecognizer.setTranslation(.zero, in: presentedView.superview)
+    
+    var frame = presentedView.frame
+    frame.origin.y += translation.y
+    presentedView.frame = frame
+    
+    if gestureRecognizer.state == .ended {
+      // Handle gesture ending, e.g., dismiss if dragged down beyond a threshold
     }
   }
   
@@ -65,12 +89,22 @@ class ViewController: UIViewController, UISheetPresentationControllerDelegate {
   
   @objc func openPager() {
     if let sheet = pagerView.sheetPresentationController {
-      sheet.detents = [.medium(), .large()]
-      sheet.delegate = self
+      pagerView.scrollingPage.delegate = self
+//      sheet.detents = [.medium(), .large()]
+      sheet.detents = [.custom { _ in 500 }, .large()]
       sheet.prefersGrabberVisible = true
     }
     present(pagerView, animated: true, completion: nil)
+    
+//    pagerView.modalPresentationStyle = .pageSheet
+//    pagerView.presentationController?.delegate = self
+//    pagerView.modalPresentationStyle = .currentContext
+//    present(pagerView, animated: true, completion: nil)
   }
   
+//  // UIAdaptivePresentationControllerDelegate method
+//  func presentationControllerShouldDismiss(_ presentationController: UIPresentationController) -> Bool {
+//    // Return true to allow dismissal via swipe gesture
+//    return true
+//  }
 }
-
