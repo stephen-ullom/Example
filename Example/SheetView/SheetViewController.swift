@@ -7,16 +7,23 @@
 
 import UIKit
 
+// enum SheetState {
+//  case dragging
+//  case
+// }
+
 class SheetViewController: UIViewController, UIScrollViewDelegate {
   let sheetView = UIView()
   var sheetViewTopConstraint: NSLayoutConstraint!
 
   let scrollView = UIScrollView()
 
-  private var closeHeight = 100.0
+  private var mediumDetent: CGFloat = 500
 
-  private var panStartPosition = 0.0
-  private var scrollStartPosition = 0.0
+  private var panStartPosition: CGFloat = 0
+  private var scrollStartPosition: CGFloat = 0
+
+  var sheetIsDragging = false
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -28,12 +35,7 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
     view.addSubview(sheetView)
 
     // SheetView
-
     sheetViewTopConstraint = sheetView.topAnchor.constraint(equalTo: view.bottomAnchor, constant: -100)
-
-//    let sheetViewPanGesture = UIPanGestureRecognizer(target: self, action: #selector(sheetPanned(_:)))
-//    sheetView.addGestureRecognizer(sheetViewPanGesture)
-
     // sheetView.isHidden = true
     sheetView.layer.cornerRadius = 24
     sheetView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
@@ -41,12 +43,7 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
     sheetView.translatesAutoresizingMaskIntoConstraints = false
 
     // ScrollView
-
     scrollView.delegate = self
-
-//    let scrollViewPanGesture = scrollView.panGestureRecognizer
-//    scrollViewPanGesture.addTarget(self, action: #selector(scrollViewPanned(_:)))
-
     scrollView.translatesAutoresizingMaskIntoConstraints = false
 
     sheetView.addSubview(scrollView)
@@ -80,90 +77,66 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
     let yOffset = scrollView.contentOffset.y
     let maxHeight = view.frame.height
     let sheetViewHeight = sheetView.frame.height
-    
+
     var newOffset = sheetViewHeight + yOffset
 
     if yOffset < 0 {
       // Move down
-      sheetViewTopConstraint.constant = -newOffset
       scrollView.contentOffset.y = 0
+      if sheetIsDragging {
+        UIView.animate(withDuration: 0, delay: 0, options: [.allowUserInteraction], animations: {
+          self.sheetViewTopConstraint.constant = -newOffset
+          self.view.layoutIfNeeded()
+        })
+      }
     } else if yOffset > 0 {
       // Move up
-      if (newOffset > maxHeight) {
+      if newOffset > maxHeight {
         newOffset = maxHeight
       } else {
         scrollView.contentOffset.y = 0
       }
-      sheetViewTopConstraint.constant = -newOffset
+      if sheetIsDragging {
+        UIView.animate(withDuration: 0, delay: 0, options: [.allowUserInteraction], animations: {
+          self.sheetViewTopConstraint.constant = -newOffset
+          self.view.layoutIfNeeded()
+        })
+      }
     }
   }
 
-//  func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-//    if gestureRecognizer == listView.scrollView.panGestureRecognizer {
-//      return shouldAllowScrolling()
-//    }
-//    return true
-//  }
+  func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+    sheetIsDragging = false
+    snapToDetents()
+  }
 
-//  func shouldAllowScrolling() -> Bool {
-//    let maxHeight = view.frame.height
-//    let currentHeight = sheetView.frame.height
-//
-//    return currentHeight == maxHeight
-//  }
+  func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+    sheetIsDragging = true
+  }
 
-  @objc func scrollViewPanned(_ gestureRecognizer: UIPanGestureRecognizer) {
-    let translation = gestureRecognizer.translation(in: view)
-    let maxHeight = view.frame.height
-    let currentHeight = sheetView.frame.height
+  func snapToDetents() {
+    let frameHeight = view.frame.height
+    let sheetViewHeight = sheetView.frame.height
+
+    let scrollVelocity = scrollView.panGestureRecognizer.velocity(in: scrollView).y
     let scrollOffset = scrollView.contentOffset.y
 
-    if gestureRecognizer.state == .began {
-      panStartPosition = currentHeight
-      scrollStartPosition = scrollOffset
-    } else if gestureRecognizer.state == .changed {
-      // Move sheet
-//      if translation.y > 0 {
-//        // Scrolling down
-//        if scrollOffset <= 0 {
-//          setSheetHeight(height: panStartPosition - translation.y + scrollStartPosition)
-//        }
-//      } else {
-//        // Scrolling up
-//        if currentHeight < maxHeight {
-//          scrollView.contentOffset.y = 0
-//        }
-//        setSheetHeight(height: panStartPosition - translation.y)
-//      }
-    } else if gestureRecognizer.state == .ended {
-      UIViewPropertyAnimator(duration: 0.8, dampingRatio: 0.8) {
-//        let closestPosition = closestToTarget([maxHeight, self.defaultHeight, self.closeHeight], target: currentHeight)
-//        if closestPosition == self.closeHeight {
-//          self.dismissSheet()
-//        } else {
-//          self.setSheetHeight(height: closestPosition)
-//        }
-        self.setSheetHeight(height: maxHeight)
-      }.startAnimation()
-    }
-  }
+    let resistance: CGFloat = 4
+    let targetPosition = sheetViewHeight + scrollOffset - (scrollVelocity / resistance)
 
-//  @objc func sheetPanned(_ gestureRecognizer: UIPanGestureRecognizer) {
-//    let translation = gestureRecognizer.translation(in: view)
-//    let height = defaultHeight - translation.y
-//
-//    if gestureRecognizer.state == .changed {
-//      setSheetHeight(height: height)
-//    } else if gestureRecognizer.state == .ended {
-//      if height > 200 {
-//        UIViewPropertyAnimator(duration: 0.8, dampingRatio: 0.8) {
-//          self.setSheetHeight(height: self.defaultHeight)
-//        }.startAnimation()
-//      } else {
-//        dismissSheet()
-//      }
-//    }
-//  }
+    let closestLocation = closestToTarget([frameHeight, mediumDetent, 0], target: targetPosition)
+
+    UIView.animate(
+      withDuration: 0.4,
+      delay: 0,
+      usingSpringWithDamping: 0.8,
+      initialSpringVelocity: (scrollVelocity / resistance) / frameHeight,
+      options: [.allowUserInteraction],
+      animations: {
+        self.sheetViewTopConstraint.constant = -closestLocation
+        self.view.layoutIfNeeded()
+      })
+  }
 
   @objc func viewTapped(_ gestureRecognizer: UITapGestureRecognizer) {
     let location = gestureRecognizer.location(in: view)
@@ -188,7 +161,7 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
   public func presentSheet() {
     view.isHidden = false
     UIViewPropertyAnimator(duration: 0.6, dampingRatio: 0.8) {
-      self.setSheetHeight(height: self.view.frame.height)
+      self.setSheetHeight(height: self.mediumDetent)
     }.startAnimation()
   }
 
