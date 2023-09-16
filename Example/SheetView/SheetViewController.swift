@@ -14,16 +14,13 @@ import UIKit
 
 class SheetViewController: UIViewController, UIScrollViewDelegate {
   let sheetView = UIView()
-  var sheetViewTopConstraint: NSLayoutConstraint!
-
+  var sheetViewBottomConstraint: NSLayoutConstraint!
   let scrollView = UIScrollView()
 
   private var mediumDetent: CGFloat = 500
 
-  private var panStartPosition: CGFloat = 0
-  private var scrollStartPosition: CGFloat = 0
-
   var sheetIsDragging = false
+  var sheetIsLocked = false
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -35,7 +32,7 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
     view.addSubview(sheetView)
 
     // SheetView
-    sheetViewTopConstraint = sheetView.topAnchor.constraint(equalTo: view.bottomAnchor, constant: -100)
+    sheetViewBottomConstraint = sheetView.bottomAnchor.constraint(greaterThanOrEqualTo: view.bottomAnchor, constant: mediumDetent)
     // sheetView.isHidden = true
     sheetView.layer.cornerRadius = 24
     sheetView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
@@ -55,12 +52,12 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
     scrollView.addSubview(listView)
 
     NSLayoutConstraint.activate([
-      sheetViewTopConstraint,
+      sheetView.heightAnchor.constraint(equalTo: view.heightAnchor),
       sheetView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       sheetView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-      sheetView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+      sheetViewBottomConstraint,
 
-      scrollView.topAnchor.constraint(equalTo: sheetView.topAnchor, constant: 48),
+      scrollView.topAnchor.constraint(equalTo: sheetView.topAnchor, constant: 80),
       scrollView.leadingAnchor.constraint(equalTo: sheetView.leadingAnchor),
       scrollView.trailingAnchor.constraint(equalTo: sheetView.trailingAnchor),
       scrollView.bottomAnchor.constraint(equalTo: sheetView.bottomAnchor),
@@ -74,22 +71,22 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
   }
 
   func scrollViewDidScroll(_ scrollView: UIScrollView) {
-    let yOffset = scrollView.contentOffset.y
+    let scrollOffset = scrollView.contentOffset.y
     let maxHeight = view.frame.height
-    let sheetViewHeight = sheetView.frame.height
+    let top = maxHeight - sheetViewBottomConstraint.constant
 
-    var newOffset = sheetViewHeight + yOffset
+    var newOffset = top + scrollOffset
 
-    if yOffset < 0 {
+    if scrollOffset < 0 {
       // Move down
       scrollView.contentOffset.y = 0
       if sheetIsDragging {
         UIView.animate(withDuration: 0, delay: 0, options: [.allowUserInteraction], animations: {
-          self.sheetViewTopConstraint.constant = -newOffset
+          self.setSheetTop(newOffset)
           self.view.layoutIfNeeded()
         })
       }
-    } else if yOffset > 0 {
+    } else if scrollOffset > 0 {
       // Move up
       if newOffset > maxHeight {
         newOffset = maxHeight
@@ -98,42 +95,54 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
       }
       if sheetIsDragging {
         UIView.animate(withDuration: 0, delay: 0, options: [.allowUserInteraction], animations: {
-          self.sheetViewTopConstraint.constant = -newOffset
+          self.setSheetTop(newOffset)
           self.view.layoutIfNeeded()
         })
       }
+    }
+
+    if sheetIsLocked {
+      scrollView.contentOffset.y = 0
     }
   }
 
   func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
     sheetIsDragging = false
-    snapToDetents()
+    snapToDetents(willDecelerate: decelerate)
   }
 
   func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+    sheetIsLocked = false
     sheetIsDragging = true
   }
 
-  func snapToDetents() {
+  func snapToDetents(willDecelerate decelerate: Bool) {
     let frameHeight = view.frame.height
-    let sheetViewHeight = sheetView.frame.height
+    let sheetTop = frameHeight - sheetViewBottomConstraint.constant
 
     let scrollVelocity = scrollView.panGestureRecognizer.velocity(in: scrollView).y
     let scrollOffset = scrollView.contentOffset.y
 
-    let resistance: CGFloat = 4
-    let targetPosition = sheetViewHeight + scrollOffset - (scrollVelocity / resistance)
+    let resistance: CGFloat = 7
+    let targetPosition = sheetTop + scrollOffset - (scrollVelocity / resistance)
 
     let closestLocation = closestToTarget([frameHeight, mediumDetent, 0], target: targetPosition)
 
+    let isMaxHeight = sheetViewBottomConstraint.constant == 0
+    let shouldSnapToMax = closestLocation == frameHeight
+
+    if decelerate && shouldSnapToMax && !isMaxHeight {
+      sheetIsLocked = true
+    }
+
     UIView.animate(
-      withDuration: 0.4,
+      withDuration: 0.5,
       delay: 0,
-      usingSpringWithDamping: 0.8,
+      usingSpringWithDamping: 0.7,
       initialSpringVelocity: (scrollVelocity / resistance) / frameHeight,
       options: [.allowUserInteraction],
       animations: {
-        self.sheetViewTopConstraint.constant = -closestLocation
+        self.setSheetTop(closestLocation)
         self.view.layoutIfNeeded()
       })
   }
@@ -146,34 +155,32 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
     }
   }
 
-  private func setSheetHeight(height: CGFloat) {
+  private func setSheetTop(_ top: CGFloat) {
     let maxHeight = view.frame.height
-    if height > maxHeight {
-      sheetViewTopConstraint.constant = -maxHeight
-    } else if height > 0 {
-      sheetViewTopConstraint.constant = -height
+
+    if top > maxHeight {
+      sheetViewBottomConstraint.constant = 0
     } else {
-      sheetViewTopConstraint.constant = 0
+      sheetViewBottomConstraint.constant = maxHeight - top
     }
-    view.layoutIfNeeded()
   }
 
   public func presentSheet() {
     view.isHidden = false
-    UIViewPropertyAnimator(duration: 0.6, dampingRatio: 0.8) {
-      self.setSheetHeight(height: self.mediumDetent)
+    UIViewPropertyAnimator(duration: 0.6, dampingRatio: 0.7) {
+      self.setSheetTop(self.mediumDetent)
+      self.view.layoutIfNeeded()
     }.startAnimation()
   }
 
   public func dismissSheet() {
-    let animator = UIViewPropertyAnimator(duration: 0.8, dampingRatio: 0.8) {
-      self.setSheetHeight(height: 0)
+    let animator = UIViewPropertyAnimator(duration: 0.5, dampingRatio: 1) {
+      self.setSheetTop(0)
+      self.view.layoutIfNeeded()
     }
-
     animator.addCompletion { _ in
       self.view.isHidden = true
     }
-
     animator.startAnimation()
   }
 }
