@@ -20,6 +20,12 @@ class ViewController: UIViewController {
     button.addTarget(self, action: #selector(openSheet), for: .touchUpInside)
     button.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(button)
+    
+    // Label
+    let label = UILabel()
+    label.text = "Hello World"
+    label.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(label)
 
     // SheetView
     sheetView = SheetViewController()
@@ -32,6 +38,9 @@ class ViewController: UIViewController {
     NSLayoutConstraint.activate([
       button.centerYAnchor.constraint(equalTo: view.centerYAnchor),
       button.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+      
+      label.centerYAnchor.constraint(equalTo: view.topAnchor, constant: 100),
+      label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 
       sheetView.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
       sheetView.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),

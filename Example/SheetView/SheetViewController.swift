@@ -13,11 +13,13 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
 
   var safeAreaInsets: UIEdgeInsets?
   var mediumDetent: CGFloat = 500
+  var resistance: CGFloat = 10
 
   private var sheetViewBottomConstraint: NSLayoutConstraint!
   private var bottomPadding: CGFloat = 32
   private var sheetIsDragging = false
   private var sheetIsLocked = false
+  private var sheetStartPosition: CGFloat = 0
 
   private var sheetTop: CGFloat {
     get {
@@ -46,9 +48,16 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
 
     // SheetView
     sheetViewBottomConstraint = sheetView.bottomAnchor.constraint(greaterThanOrEqualTo: view.bottomAnchor, constant: mediumDetent)
-    sheetView.layer.cornerRadius = 24
-    sheetView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
     sheetView.backgroundColor = .systemBlue
+    sheetView.layer.cornerRadius = 32
+    sheetView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+    sheetView.layer.shadowOpacity = 0.2
+    sheetView.layer.shadowRadius = 7
+    sheetView.layer.shadowOffset = .zero
+
+    let sheetViewPanGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+    sheetView.addGestureRecognizer(sheetViewPanGesture)
+
     sheetView.translatesAutoresizingMaskIntoConstraints = false
 
     // ScrollView
@@ -80,6 +89,24 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
       listView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
       listView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
     ])
+  }
+
+  @objc func handlePan(_ recognizer: UIPanGestureRecognizer) {
+    if recognizer.state == .began {
+      sheetStartPosition = sheetTop
+    } else if recognizer.state == .changed {
+      let offset = recognizer.translation(in: view).y
+
+      UIView.animate(withDuration: 0, delay: 0, options: [.allowUserInteraction], animations: {
+        self.sheetTop = self.sheetStartPosition - offset
+        self.view.layoutIfNeeded()
+      })
+    } else if recognizer.state == .ended {
+      let velocity = recognizer.velocity(in: view).y
+      let targetPosition = sheetTop - (velocity / resistance)
+
+      snapToDetents(targetPosition: targetPosition)
+    }
   }
 
   override func viewSafeAreaInsetsDidChange() {
@@ -129,7 +156,13 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
 
   func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
     sheetIsDragging = false
-    snapToDetents(willDecelerate: decelerate)
+
+    let scrollVelocity = scrollView.panGestureRecognizer.velocity(in: scrollView).y
+    let scrollOffset = scrollView.contentOffset.y
+
+    let targetPosition = sheetTop + scrollOffset - (scrollVelocity / resistance)
+
+    snapToDetents(targetPosition: targetPosition, willDecelerate: decelerate)
   }
 
   func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
@@ -137,22 +170,19 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
     sheetIsDragging = true
   }
 
-  func snapToDetents(willDecelerate decelerate: Bool) {
+  func snapToDetents(targetPosition: CGFloat, willDecelerate decelerate: Bool = false) {
     let frameHeight = view.frame.height
-
-    let scrollVelocity = scrollView.panGestureRecognizer.velocity(in: scrollView).y
-    let scrollOffset = scrollView.contentOffset.y
-
-    let resistance: CGFloat = 7
-    let targetPosition = sheetTop + scrollOffset - (scrollVelocity / resistance)
 
     let closestLocation = closestToTarget([frameHeight, mediumDetent, 0], target: targetPosition)
 
     let isMaxHeight = sheetViewBottomConstraint.constant == bottomPadding
     let shouldSnapToMax = closestLocation == frameHeight
 
+    let difference = sheetTop - targetPosition
+    let velocity = difference / resistance
+
     if closestLocation == 0 {
-      dismissSheet(velocity: scrollVelocity / 100)
+      dismissSheet(velocity: velocity)
     } else {
       if decelerate && shouldSnapToMax && !isMaxHeight {
         sheetIsLocked = true
@@ -162,7 +192,7 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
         withDuration: 0.5,
         delay: 0,
         usingSpringWithDamping: 0.7,
-        initialSpringVelocity: (scrollVelocity / resistance) / frameHeight,
+        initialSpringVelocity: 1,
         options: [.allowUserInteraction],
         animations: {
           self.sheetTop = closestLocation
