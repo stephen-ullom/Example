@@ -8,7 +8,7 @@
 import UIKit
 
 class ViewController: UIViewController {
-  let sheetView = SheetViewController()
+  var sheetView: SheetViewController!
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -19,13 +19,14 @@ class ViewController: UIViewController {
     button.setTitle("Open Sheet", for: .normal)
     button.addTarget(self, action: #selector(openSheet), for: .touchUpInside)
     button.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(button)
 
     // SheetView
+    sheetView = SheetViewController()
     sheetView.view.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(sheetView.view)
 
     // View
-    view.addSubview(button)
-    view.addSubview(sheetView.view)
     view.backgroundColor = .systemBackground
 
     NSLayoutConstraint.activate([
