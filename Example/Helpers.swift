@@ -6,16 +6,16 @@
 //
 
 func closestToTarget(_ numbers: [Double], target: Double) -> Double {
-  var closestNumber: Double = numbers[0]
-  var closestDifference: Double = abs(numbers[0] - target)
+    var closestNumber: Double = numbers[0]
+    var closestDifference: Double = abs(numbers[0] - target)
 
-  for number in numbers {
-    let difference = abs(number - target)
-    if difference < closestDifference {
-      closestNumber = number
-      closestDifference = difference
+    for number in numbers {
+        let difference = abs(number - target)
+        if difference < closestDifference {
+            closestNumber = number
+            closestDifference = difference
+        }
     }
-  }
 
-  return closestNumber
+    return closestNumber
 }
