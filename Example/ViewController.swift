@@ -52,6 +52,22 @@ class ViewController: UIViewController {
                 equalTo: view.trailingAnchor),
             sheetView.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+
+//        layoutPageView()
+    }
+
+    func layoutPageView() {
+        let page = PageViewController()
+        page.view.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(page.view)
+
+        NSLayoutConstraint.activate([
+            page.view.topAnchor.constraint(equalTo: view.centerYAnchor),
+            page.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            page.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            page.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
     }
 
     @objc func openSheet() {
