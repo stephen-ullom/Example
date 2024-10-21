@@ -8,53 +8,48 @@
 import UIKit
 
 class ViewController: UIViewController {
-  
+  var sheetView: SheetViewController!
+
   override func viewDidLoad() {
     super.viewDidLoad()
+
+    // Button
+    let button = UIButton(type: .system)
+    button.configuration = .filled()
+    button.setTitle("Open Sheet", for: .normal)
+    button.addTarget(self, action: #selector(openSheet), for: .touchUpInside)
+    button.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(button)
     
+    // Label
+    let label = UILabel()
+    label.text = "Hello World"
+    label.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(label)
+
+    // SheetView
+    sheetView = SheetViewController()
+    sheetView.view.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(sheetView.view)
+
+    // View
     view.backgroundColor = .systemBackground
-    
-    let button1 = UIButton(type: .system)
-    button1.configuration = .filled()
-    button1.setTitle("Scroll Sheet", for: .normal)
-    button1.addTarget(self, action: #selector(openScroller), for: .touchUpInside)
-    
-    let button2 = UIButton(type: .system)
-    button2.configuration = .filled()
-    button2.tintColor = .systemRed
-    button2.setTitle("Page Sheet", for: .normal)
-    button2.addTarget(self, action: #selector(openPager), for: .touchUpInside)
-    
-    view.addSubview(button1)
-    view.addSubview(button2)
-    
-    button1.translatesAutoresizingMaskIntoConstraints = false
-    button2.translatesAutoresizingMaskIntoConstraints = false
+
     NSLayoutConstraint.activate([
-      button1.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-      button1.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 32),
-      button2.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-      button2.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -32)
+      button.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+      button.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+      
+      label.centerYAnchor.constraint(equalTo: view.topAnchor, constant: 100),
+      label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+
+      sheetView.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+      sheetView.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      sheetView.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      sheetView.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
     ])
   }
-  
-  @objc func openScroller() {
-    let viewControllerToPresent = Scroller()
-    if let sheet = viewControllerToPresent.sheetPresentationController {
-      sheet.detents = [.medium(), .large()]
-      sheet.prefersGrabberVisible = true
-    }
-    present(viewControllerToPresent, animated: true, completion: nil)
-  }
-  
-  @objc func openPager() {
-    let viewControllerToPresent = Pager(transitionStyle: .scroll, navigationOrientation: .horizontal)
-    if let sheet = viewControllerToPresent.sheetPresentationController {
-      sheet.detents = [.medium(), .large()]
-      sheet.prefersGrabberVisible = true
-    }
-    present(viewControllerToPresent, animated: true, completion: nil)
-  }
- 
-}
 
+  @objc func openSheet() {
+    sheetView.presentSheet()
+  }
+}
