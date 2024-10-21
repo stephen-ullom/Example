@@ -11,7 +11,7 @@ class ListView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        backgroundColor = .systemTeal
+        backgroundColor = .tertiarySystemBackground
 
         // StackView
         let stackView = UIStackView()
@@ -22,8 +22,8 @@ class ListView: UIView {
         // Labels
         for i in 0..<24 {
             let label = UILabel()
-            label.text = "Label \(i + 1)"
-            label.textColor = .white
+            label.text = "Item \(i + 1)"
+            label.textColor = .label
             stackView.addArrangedSubview(label)
         }
 

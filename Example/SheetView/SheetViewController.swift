@@ -52,7 +52,7 @@ class SheetViewController: UIViewController, UIScrollViewDelegate {
         // SheetView
         sheetViewBottomConstraint = sheetView.bottomAnchor.constraint(
             greaterThanOrEqualTo: view.bottomAnchor, constant: mediumDetent)
-        sheetView.backgroundColor = .systemBlue
+        sheetView.backgroundColor = .secondarySystemBackground
         sheetView.layer.cornerRadius = 32
         sheetView.layer.maskedCorners = [
             .layerMinXMinYCorner, .layerMaxXMinYCorner,
